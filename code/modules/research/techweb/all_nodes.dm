@@ -151,7 +151,7 @@
 	prereq_ids = list("base")
 	design_ids = list("solarcontrol", "recharger", "powermonitor", "rped", "pacman", "adv_capacitor", "adv_scanning", "emitter", "high_cell", "adv_matter_bin", "scanner_gate",
 	"atmosalerts", "atmos_control", "recycler", "autolathe", "high_micro_laser", "nano_mani", "mesons", "thermomachine", "rad_collector", "tesla_coil", "grounding_rod",
-	"apc_control", "cell_charger", "power control", "airlock_board", "firelock_board", "airalarm_electronics", "firealarm_electronics", "cell_charger", "stack_console", "stack_machine",
+	"apc_control", "cell_charger", "power control", "airlock_board", "firelock_board", "aac_electronics", "airalarm_electronics", "firealarm_electronics", "cell_charger", "stack_console", "stack_machine",
 	"oxygen_tank", "plasma_tank", "emergency_oxygen", "emergency_oxygen_engi", "plasmaman_tank_belt", "plasmaman_tank")
 	research_costs = list(TECHWEB_POINT_TYPE_GENERIC = 7500)
 	export_price = 5000
@@ -565,6 +565,15 @@
 	design_ids = list("ci-xray", "ci-thermals", "ci-antidrop", "ci-antistun", "ci-thrusters")
 	research_costs = list(TECHWEB_POINT_TYPE_GENERIC = 2500)
 	export_price = 5000
+
+/datum/techweb_node/adv_combat_cyber_implants
+	id = "adv_combat_cyber_implants"
+	display_name = "Advanced Combat Cybernetic Implants"
+	description = "Experimental military cybernetic weapons."
+	prereq_ids = list("combat_cyber_implants", "syndicate_basic")
+	design_ids = list("hydraulic_blade")
+	research_costs = list(TECHWEB_POINT_TYPE_GENERIC = 10000)
+	export_price = 10000
 
 ////////////////////////Tools////////////////////////
 
@@ -1007,7 +1016,7 @@
 	display_name = "Mesh Nanite Programming"
 	description = "Nanite programs that require static structures and membranes."
 	prereq_ids = list("nanite_base","engineering")
-	design_ids = list("hardening_nanites", "refractive_nanites", "cryo_nanites", "conductive_nanites", "shock_nanites", "emp_nanites", "temperature_nanites")
+	design_ids = list("hardening_nanites", "dermal_button_nanites", "refractive_nanites", "cryo_nanites", "conductive_nanites", "shock_nanites", "emp_nanites", "temperature_nanites")
 	research_costs = list(TECHWEB_POINT_TYPE_GENERIC = 2500)
 	export_price = 5000
 

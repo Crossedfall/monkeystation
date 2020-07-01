@@ -77,7 +77,7 @@
 	w_class_on = WEIGHT_CLASS_HUGE
 	flags_1 = CONDUCT_1
 	armour_penetration = 100
-	attack_verb_off = list("attacked", "chopped", "cleaved", "torn", "cut")
+	attack_verb_off = list("attacked", "chopped", "cleaved", "tore", "cut")
 	attack_verb_on = list()
 	light_color = "#40ceff"
 
@@ -103,7 +103,7 @@
 	block_level = 1
 	block_upgrade_walk = 1
 	block_power = 35
-	block_sound = 'sound/weapons/genhit.ogg'
+	block_sound = 'sound/weapons/egloves.ogg'
 	block_flags = BLOCKING_ACTIVE | BLOCKING_NASTY
 
 /obj/item/melee/transforming/energy/sword/transform_weapon(mob/living/user, supress_message_text)

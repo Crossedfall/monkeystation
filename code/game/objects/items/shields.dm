@@ -16,32 +16,53 @@
 
 /obj/item/shield/on_block(mob/living/carbon/human/owner, atom/movable/hitby, attack_text, damage, attack_type)
 	if(durability)
-		var/attackforce = 0 
+		var/attackforce = 0
 		if(isprojectile(hitby))
 			var/obj/item/projectile/P = hitby
-			if(P.damtype != STAMINA)// disablers dont do shit to shields
-				attackforce = P.damage
+			if(P.damage_type != STAMINA)// disablers dont do shit to shields
+				attackforce = (P.damage / 2)
 		if(isitem(hitby))
 			var/obj/item/I = hitby
 			attackforce = damage
 			if(!I.damtype == BRUTE)
 				attackforce = (attackforce / 2)
 			attackforce = (attackforce * I.attack_weight)
-		else if(isliving(hitby))
+			if(I.damtype == STAMINA)//pure stamina damage wont affect blocks
+				attackforce = 0
+		else if(isliving(hitby)) //not putting an anti stamina clause in here. only stamina damage simplemobs i know of are swarmers, and them eating shields makes sense
 			var/mob/living/L = hitby
-			attackforce = (damage * 2)//simplemobs have an advantage here because of how much these blocking mechanics put them at a disadvantage
+			if(block_flags & BLOCKING_HUNTER)
+				attackforce = (damage) //some shields are better at blocking simple mobs
+			else
+				attackforce = (damage * 2)//simplemobs have an advantage here because of how much these blocking mechanics put them at a disadvantage
 			if(block_flags & BLOCKING_NASTY)
 				L.attackby(src, owner)
 				owner.visible_message("<span class='danger'>[L] injures themselves on [owner]'s [src]!</span>")
 		if (obj_integrity <= attackforce)
 			var/turf/T = get_turf(owner)
 			T.visible_message("<span class='warning'>[hitby] destroys [src]!</span>")
+			obj_integrity = 1
 			shatter(owner)
 			return FALSE
 		take_damage(attackforce * ((100-(block_power))/100))
 		return TRUE
 	else
 		return ..()
+
+/obj/item/shield/attackby(obj/item/weldingtool/W, mob/living/user, params)
+	if(istype(W))
+		if(obj_integrity < max_integrity)
+			if(!W.tool_start_check(user, amount=0))
+				return
+			user.visible_message("[user] is welding the [src].", \
+									"<span class='notice'>You begin repairing the [src]]...</span>")
+			if(W.use_tool(src, user, 40, volume=50))
+				obj_integrity += 10
+				user.visible_message("[user.name] has repaired some dents on [src].", \
+									"<span class='notice'>You finish repairing some of the dents on [src].</span>")
+			else
+				to_chat(user, "<span class='notice'>The [src] doesn't need repairing.</span>")
+	return ..()
 
 /obj/item/shield/examine(mob/user)
 	. = ..()
@@ -56,7 +77,7 @@
 
 /obj/item/shield/proc/shatter(mob/living/carbon/human/owner)
 	playsound(owner, 'sound/effects/glassbr3.ogg', 100)
-	new /obj/item/shard((get_turf(src)))		
+	new /obj/item/shard((get_turf(src)))
 	qdel(src)
 
 /obj/item/shield/riot
@@ -137,6 +158,27 @@
 	new /obj/item/stack/sheet/mineral/wood(get_turf(src))
 	qdel(src)
 
+/obj/item/shield/riot/goliath
+	name = "Goliath shield"
+	desc = "A shield made from interwoven plates of goliath hide."
+	icon_state = "goliath_shield"
+	item_state = "goliath_shield"
+	block_level = 1
+	block_upgrade_walk = 1
+	lefthand_file = 'icons/mob/inhands/equipment/shields_lefthand.dmi'
+	righthand_file = 'icons/mob/inhands/equipment/shields_righthand.dmi'
+	materials = list ()
+	transparent = FALSE
+	block_power = 25
+	max_integrity = 70
+	block_flags = BLOCKING_HUNTER | BLOCKING_PROJECTILE
+	w_class = WEIGHT_CLASS_BULKY
+
+/obj/item/shield/riot/goliath/shatter(mob/living/carbon/human/owner)
+	playsound(owner, 'sound/effects/bang.ogg', 50)
+	new /obj/item/stack/sheet/animalhide/goliath_hide(get_turf(src))
+	qdel(src)
+
 /obj/item/shield/riot/flash
 	name = "strobe shield"
 	desc = "A shield with a built in, high intensity light capable of blinding and disorienting suspects. Takes regular handheld flashes as bulbs."
@@ -212,19 +254,26 @@
 	throwforce = 3
 	throw_speed = 3
 	max_integrity = 50
-	block_sound = 'sound/weapons/genhit.ogg'
+	block_sound = 'sound/weapons/egloves.ogg'
 	var/base_icon_state = "eshield" // [base_icon_state]1 for expanded, [base_icon_state]0 for contracted
 	var/on_force = 10
 	var/on_throwforce = 8
 	var/on_throw_speed = 2
 	var/active = 0
 	var/clumsy_check = TRUE
+	var/cooldown_duration = 100
+	var/cooldown_timer
 
 /obj/item/shield/energy/shatter(mob/living/carbon/human/owner)
-	playsound(owner, 'sound/effects/turbolift/turbolift-close.ogg', 50, 0, -1)
+	playsound(owner, 'sound/effects/turbolift/turbolift-close.ogg', 200, 1)
 	src.attack_self(owner)
 	to_chat(owner, "<span class='warning'>The [src] overheats!.</span>")
-	
+	cooldown_timer = world.time + cooldown_duration
+	addtimer(CALLBACK(src, .proc/recharged, owner), cooldown_duration)
+
+/obj/item/shield/energy/proc/recharged(mob/living/carbon/human/owner)//ree. i hate addtimer. ree.
+	playsound(owner, 'sound/effects/beepskyspinsabre.ogg', 35, 1)
+	to_chat(owner, "<span class='warning'>The [src] is ready to use!.</span>")
 
 /obj/item/shield/energy/Initialize()
 	. = ..()
@@ -242,19 +291,22 @@
 	return 0
 
 /obj/item/shield/energy/attack_self(mob/living/carbon/human/user)
+	if(cooldown_timer >= world.time)
+		return
 	if(clumsy_check && HAS_TRAIT(user, TRAIT_CLUMSY) && prob(50))
 		to_chat(user, "<span class='warning'>You beat yourself in the head with [src].</span>")
 		user.take_bodypart_damage(5)
 	active = !active
 	icon_state = "[base_icon_state][active]"
-
 	if(active)
 		force = on_force
 		throwforce = on_throwforce
 		throw_speed = on_throw_speed
 		w_class = WEIGHT_CLASS_BULKY
 		playsound(user, 'sound/weapons/saberon.ogg', 35, 1)
-		to_chat(user, "<span class='notice'>[src] is now active.</span>")
+		to_chat(user, "<span class='notice'>[src] is now active and back at full power.</span>")
+		if(obj_integrity <= 1)
+			obj_integrity = max_integrity
 	else
 		force = initial(force)
 		throwforce = initial(throwforce)
