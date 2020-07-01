@@ -1,2 +1,4 @@
+environment = "monkeystation.dme"
+
 [langserver]
 dreamchecker = true
